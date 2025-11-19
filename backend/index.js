@@ -1,0 +1,158 @@
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const base64url = require('base64url');
+const {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} = require('@simplewebauthn/server');
+
+const { createUser, getUser, addCredentialToUser } = require('./users');
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
+// Configuration - adapt these for your environment
+const rpName = 'Example WebAuthn App';
+const rpID = 'localhost';
+const origin = 'http://localhost:4200';
+
+// POST /register/options
+// body: { username }
+app.post('/register/options', (req, res) => {
+  const { username } = req.body || {};
+  if (!username) return res.status(400).json({ error: 'Missing username' });
+
+  let user = getUser(username);
+  if (!user) user = createUser(username);
+
+  const options = generateRegistrationOptions({
+    rpName,
+    rpID,
+    userID: user.id,
+    userName: user.username,
+    timeout: 60000,
+    attestationType: 'none',
+    authenticatorSelection: {
+      userVerification: 'preferred',
+    },
+    excludeCredentials: user.credentials.map((cred) => ({
+      id: base64url.toBuffer(cred.credentialID),
+      type: 'public-key',
+      transports: cred.transports || undefined,
+    })),
+    supportedAlgorithmIDs: [-7, -257],
+  });
+
+  // Save the challenge on the user for verification later
+  user.currentChallenge = options.challenge;
+
+  return res.json(options);
+});
+
+// POST /register/verify
+// body: { username, attestation }
+app.post('/register/verify', async (req, res) => {
+  const { username, attestation } = req.body || {};
+  if (!username || !attestation) return res.status(400).json({ error: 'Missing parameters' });
+
+  const user = getUser(username);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  try {
+    const verification = await verifyRegistrationResponse({
+      response: attestation,
+      expectedChallenge: user.currentChallenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+    });
+
+    const { verified, registrationInfo } = verification;
+    if (verified && registrationInfo) {
+      const { credentialPublicKey, credentialID, counter } = registrationInfo;
+
+      addCredentialToUser(username, {
+        credentialID: base64url.encode(credentialID),
+        credentialPublicKey: base64url.encode(credentialPublicKey),
+        counter,
+      });
+    }
+
+    // Clear challenge
+    user.currentChallenge = undefined;
+
+    return res.json({ verified });
+  } catch (err) {
+    console.error('Registration verification error', err);
+    return res.status(400).json({ error: err.message || err.toString() });
+  }
+});
+
+// POST /auth/options
+// body: { username }
+app.post('/auth/options', (req, res) => {
+  const { username } = req.body || {};
+  if (!username) return res.status(400).json({ error: 'Missing username' });
+
+  const user = getUser(username);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const options = generateAuthenticationOptions({
+    timeout: 60000,
+    allowCredentials: user.credentials.map((cred) => ({
+      id: base64url.toBuffer(cred.credentialID),
+      type: 'public-key',
+      transports: cred.transports || undefined,
+    })),
+    userVerification: 'preferred',
+    rpID,
+  });
+
+  user.currentChallenge = options.challenge;
+  return res.json(options);
+});
+
+// POST /auth/verify
+// body: { username, assertion }
+app.post('/auth/verify', async (req, res) => {
+  const { username, assertion } = req.body || {};
+  if (!username || !assertion) return res.status(400).json({ error: 'Missing parameters' });
+
+  const user = getUser(username);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  // Find matching stored credential
+  const credential = user.credentials.find((c) => c.credentialID === assertion.id || c.credentialID === base64url.encode(base64url.toBuffer(assertion.id)));
+  if (!credential) return res.status(400).json({ error: 'Unknown credential ID' });
+
+  try {
+    const verification = await verifyAuthenticationResponse({
+      response: assertion,
+      expectedChallenge: user.currentChallenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+      authenticator: {
+        credentialPublicKey: base64url.toBuffer(credential.credentialPublicKey),
+        credentialID: base64url.toBuffer(credential.credentialID),
+        counter: credential.counter || 0,
+      },
+    });
+
+    const { verified, authenticationInfo } = verification;
+    if (verified && authenticationInfo) {
+      credential.counter = authenticationInfo.newCounter;
+    }
+
+    user.currentChallenge = undefined;
+    return res.json({ verified });
+  } catch (err) {
+    console.error('Authentication verification error', err);
+    return res.status(400).json({ error: err.message || err.toString() });
+  }
+});
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`WebAuthn backend listening on http://localhost:${PORT}`));

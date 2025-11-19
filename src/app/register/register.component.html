@@ -1,0 +1,14 @@
+<div class="webauthn-card">
+	<h2>Register</h2>
+
+	<label class="field">
+		<span>Username</span>
+		<input [(ngModel)]="username" placeholder="Enter username" />
+	</label>
+
+	<div class="actions">
+		<button (click)="registerUser()">Register</button>
+	</div>
+
+	<p class="status" *ngIf="status">{{ status }}</p>
+</div>

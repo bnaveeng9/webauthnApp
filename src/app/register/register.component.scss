@@ -1,0 +1,53 @@
+.host {
+	display: block;
+	padding: 12px;
+}
+
+.webauthn-card {
+	max-width: 420px;
+	margin: 20px auto;
+	padding: 18px;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+	background: #fff;
+}
+
+.webauthn-card h2 {
+	margin-top: 0;
+	margin-bottom: 12px;
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 12px;
+}
+
+.field input {
+	padding: 8px 10px;
+	font-size: 14px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+.actions {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.actions button {
+	padding: 8px 14px;
+	background: #1976d2;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.status {
+	margin-top: 12px;
+	color: #333;
+	font-size: 13px;
+}
+
