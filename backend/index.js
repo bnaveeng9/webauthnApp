@@ -12,13 +12,28 @@ const {
 const { createUser, getUser, addCredentialToUser } = require('./users');
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+  origin: "*",
+  credentials: true,
+})
+);
+//app.use((req, res, next) => { bodyParser.json(); } );
 app.use(bodyParser.json());
+
+//Simple way: allow all origins
+ app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  next();
+});
+
 
 // Configuration - adapt these for your environment
 const rpName = 'Example WebAuthn App';
-const rpID = 'localhost';
-const origin = 'https://dev.ngb.com:4201';
+const rpID = 'https://localhost:4200';
+const origin = 'http://localhost:4201';
 
 // POST /register/options
 // body: { username }
@@ -31,11 +46,11 @@ app.post('/register/options', (req, res) => {
 
   const options = generateRegistrationOptions({
     rpName,
-    rpID,
+    origin,
     userID: user.id,
     userName: user.username,
     timeout: 60000,
-    attestationType: 'none',
+    attestationType: 'public-key',
     authenticatorSelection: {
       userVerification: 'preferred',
     },
@@ -56,23 +71,28 @@ app.post('/register/options', (req, res) => {
 // POST /register/verify
 // body: { username, attestation }
 app.post('/register/verify', async (req, res) => {
+  
   const { username, attestation } = req.body || {};
   if (!username || !attestation) return res.status(400).json({ error: 'Missing parameters' });
 
   const user = getUser(username);
   if (!user) return res.status(404).json({ error: 'User not found' });
-
+  console.log('Received /register/verify request with body:', req);
   try {
     const verification = await verifyRegistrationResponse({
-      response: attestation,
-      expectedChallenge: user.currentChallenge,
-      expectedOrigin: origin,
-      expectedRPID: rpID,
+       credential: attestation,
+       response:  attestation ,
+       expectedChallenge: user.currentChallenge,
+       expectedOrigin: rpID,
+       expectedRPID: origin,
     });
 
-    const { verified, registrationInfo } = verification;
+    
+
+    const {verified, registrationInfo } = verification;
     if (verified && registrationInfo) {
-      const { credentialPublicKey, credentialID, counter } = registrationInfo;
+    
+      const { credentialPublicKey, credentialID, counter } = attestation;
 
       addCredentialToUser(username, {
         credentialID: base64url.encode(credentialID),
@@ -82,7 +102,7 @@ app.post('/register/verify', async (req, res) => {
     }
 
     // Clear challenge
-    user.currentChallenge = undefined;
+   // user.currentChallenge = undefined;
 
     return res.json({ verified });
   } catch (err) {
@@ -133,7 +153,7 @@ app.post('/auth/verify', async (req, res) => {
       response: assertion,
       expectedChallenge: user.currentChallenge,
       expectedOrigin: origin,
-      expectedRPID: rpID,
+      expectedRPID: origin,
       authenticator: {
         credentialPublicKey: base64url.toBuffer(credential.credentialPublicKey),
         credentialID: base64url.toBuffer(credential.credentialID),
@@ -146,7 +166,7 @@ app.post('/auth/verify', async (req, res) => {
       credential.counter = authenticationInfo.newCounter;
     }
 
-    user.currentChallenge = undefined;
+   // user.currentChallenge = undefined;
     return res.json({ verified });
   } catch (err) {
     console.error('Authentication verification error', err);
@@ -155,4 +175,27 @@ app.post('/auth/verify', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4201;
-app.listen(PORT, () => console.log(`WebAuthn backend listening on https://dev.ngb.com:${PORT}`));
+app.listen(PORT, () => console.log(`WebAuthn backend listening on http://dev.ngb.com:${PORT}`));
+
+
+
+// const certPath = process.env.SSL_CERT_PATH || '../certs/opensearch.crt';
+// const keyPath = process.env.SSL_KEY_PATH || '../certs/opensearch.key';
+
+// let server: http.Server | https.Server;
+
+// if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+//   const options = {
+//     key: fs.readFileSync(keyPath),
+//     cert: fs.readFileSync(certPath),
+//   };
+//   server = https.createServer(options, app);
+//   server.listen(process.env.PORT || 443, () => {
+//     console.log('HTTPS server listening on port', process.env.PORT || 443);
+//   });
+// } else {
+//   server = http.createServer(app);
+//   server.listen(process.env.PORT || 3000, () => {
+//     console.log('HTTP server listening on port', process.env.PORT || 3000);
+//   });
+// }
