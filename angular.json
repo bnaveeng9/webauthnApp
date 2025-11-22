@@ -67,6 +67,11 @@
             "production": {
               "browserTarget": "webauthn-app:build:production"
             },
+            "options": {
+            "ssl": true,
+            "sslKey": "cert/ca.key",
+            "sslCert": "cert/opensearch.crt"
+            },
             "development": {
               "browserTarget": "webauthn-app:build:development"
             }
