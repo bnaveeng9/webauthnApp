@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host dev.ngb.com --port 4200",
-    "start:ssl": "ng serve --host dev.ngb.com --port 4200 --ssl --ssl-key cert/ca.pem --ssl-cert cert/opensearch.crt",
+    "start:ssl": "ng serve --host dev.ngb.com --port 4200 --ssl --ssl-key /certs/ca.key --ssl-cert /certs/opensearch.crt --disable-host-check",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

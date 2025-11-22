@@ -69,8 +69,8 @@
             },
             "options": {
             "ssl": true,
-            "sslKey": "cert/ca.key",
-            "sslCert": "cert/opensearch.crt"
+            "sslKey": "/certs/ca.key",
+            "sslCert": "/certs/opensearch.crt"
             },
             "development": {
               "browserTarget": "webauthn-app:build:development"
