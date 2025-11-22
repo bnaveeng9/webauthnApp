@@ -1,10 +1,10 @@
 [req]
 distinguished_name = req_distinguished_name
-req_extensions = v3_req
+req_extensions = v4_req
 prompt = no
 
 [req_distinguished_name]
-CN = v3_req
+CN = v4_req
 C = US
 ST = SC
 L = TegaCay
@@ -12,7 +12,7 @@ O = MyOrg
 OU = IT
 
 
-[v3_req]
+[v4_req]
 subjectAltName = @alt_names
 
 [alt_names]

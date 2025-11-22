@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 // Configuration - adapt these for your environment
 const rpName = 'Example WebAuthn App';
 const rpID = 'localhost';
-const origin = 'http://dev.ngb.com:4201';
+const origin = 'https://dev.ngb.com:4201';
 
 // POST /register/options
 // body: { username }
@@ -155,4 +155,4 @@ app.post('/auth/verify', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4201;
-app.listen(PORT, () => console.log(`WebAuthn backend listening on http://dev.ngb.com:${PORT}`));
+app.listen(PORT, () => console.log(`WebAuthn backend listening on https://dev.ngb.com:${PORT}`));
