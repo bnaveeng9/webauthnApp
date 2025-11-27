@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --host dev.ngb.com --port 4200",
-    "start:ssl": "ng serve --host localhost --port 4200 --ssl --ssl-key ./certs/opensearch.key --ssl-cert ./certs/opensearch.crt --disable-host-check",
+    "start": "ng serve --host localhost --port 80",
+    "start:ssl": "ng serve --host localhost --port 80 --ssl --ssl-key ./certs/opensearch.key --ssl-cert ./certs/opensearch.crt --disable-host-check",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
