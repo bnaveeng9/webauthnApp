@@ -32,7 +32,7 @@ app.use(bodyParser.json());
 
 // Configuration - adapt these for your environment
 const rpName = 'Example WebAuthn App';
-const rpID = 'https://localhost:4200';
+const rpID = 'https://dzpfvqftdn66z.cloudfront.net';
 const origin = 'http://localhost:4000';
 
 // POST /register/options
