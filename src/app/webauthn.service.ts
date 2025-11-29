@@ -5,7 +5,7 @@ import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
 
 @Injectable({ providedIn: 'root' })
 export class WebauthnService {
-  private base = 'http://localhost:4201';
+  private base = 'https://demowebserver.ngbandi.online';
 
   constructor(private http: HttpClient) {}
 
