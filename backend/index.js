@@ -26,7 +26,7 @@ app.use(bodyParser.json());
 // rpID must be the effective domain of the frontend origin, without scheme.
 // If your frontend runs at https://demowebserver.ngbandi.online, rpID should be "demowebserver.ngbandi.online".
 const rpName = 'Example WebAuthn App';
-const rpID = 'webauthn.ngbandi.online';
+const rpID = 'demowebserver.ngbandi.online';
 const origin = 'https://webauthn.ngbandi.online';
 
 // POST /register/options
