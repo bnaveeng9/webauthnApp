@@ -83,8 +83,8 @@ app.post('/register/verify', async (req, res) => {
        credential: attestation,
        response:  attestation ,
        expectedChallenge: user.currentChallenge,
-       expectedOrigin: rpID,
-       expectedRPID: origin,
+       expectedOrigin: origin,
+       expectedRPID: rpID,
     });
 
     
@@ -183,7 +183,7 @@ app.get('/', (req, res) => {
       </head>
       <body>
         <h1>Welcome to the WebAuthn Backend</h1>
-        <p>The server is running and ready to accept requests.</p>
+        <p>The server rpID : ${rpID} and origin ${origin} is running and ready to accept requests. </p>
       </body>
     </html>
   `);
