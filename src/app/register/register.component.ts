@@ -8,7 +8,7 @@ import { WebauthnService } from '../webauthn.service';
 })
 export class RegisterComponent {
   // Replace with a real username input in your template
-  username = 'testuser';
+  username = '';
   status = '';
 
   constructor(private webauthn: WebauthnService) {}
@@ -21,10 +21,11 @@ export class RegisterComponent {
         this.status = 'Registration successful';
         console.log('Registration successful!');
       } else {
-        this.status = 'Registration failed: ' + (result && result.error ? result.error : 'unknown');
+        this.status = 'Registration failed: ' + (result && result.error ? result.error : ' unknown ');
         console.error('Registration failed:', result && result.error);
       }
     } catch (error) {
+      
       this.status = 'WebAuthn registration error: ' + ((error as any) && (error as any).message ? (error as any).message : String(error));
       console.error('WebAuthn registration error:', error);
     }

@@ -6,7 +6,7 @@ import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
 @Injectable({ providedIn: 'root' })
 export class WebauthnService {
   private base = 'https://demowebserver.ngbandi.online';
-
+  //
   constructor(private http: HttpClient) {}
 
   async register(username: string) {
@@ -36,8 +36,13 @@ export class WebauthnService {
 
   async authenticate(username: string) {
     // 1) Get authentication options from backend
-    const options = await firstValueFrom(this.http.post<any>(`${this.base}/auth/options`, {username},{
-    headers: { 'Content-Type': 'application/json' } }));
+    const options = await firstValueFrom(
+                                          this.http.post<any>(`${this.base}/auth/options`, {username},
+                                                                  {
+                                                                    headers: { 'Content-Type': 'application/json' } 
+                                                                  }
+                                                              )
+                                        );
 
 
     // 2) Call browser API to get assertion

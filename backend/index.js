@@ -153,7 +153,7 @@ app.post('/auth/verify', async (req, res) => {
       response: assertion,
       expectedChallenge: user.currentChallenge,
       expectedOrigin: origin,
-      expectedRPID: origin,
+      expectedRPID: rpID,
       authenticator: {
         credentialPublicKey: base64url.toBuffer(credential.credentialPublicKey),
         credentialID: base64url.toBuffer(credential.credentialID),
