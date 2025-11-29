@@ -174,6 +174,22 @@ app.post('/auth/verify', async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>WebAuthn Backend</title>
+      </head>
+      <body>
+        <h1>Welcome to the WebAuthn Backend</h1>
+        <p>The server is running and ready to accept requests.</p>
+      </body>
+    </html>
+  `);
+});
+
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`WebAuthn backend listening on http://dev.ngb.com:${PORT}`));
 
