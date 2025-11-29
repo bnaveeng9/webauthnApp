@@ -12,21 +12,27 @@ const {
 const { createUser, getUser, addCredentialToUser } = require('./users');
 
 const app = express();
-
-// CORS: use the middleware; avoid duplicating manual headers
 app.use(
   cors({
-    origin: '*',
-    credentials: true,
-  }),
+  origin: "*",
+  credentials: true,
+})
 );
+//app.use((req, res, next) => { bodyParser.json(); } );
 app.use(bodyParser.json());
 
+//Simple way: allow all origins
+ app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  next();
+});
+
+
 // Configuration - adapt these for your environment
-// rpID must be the effective domain of the frontend origin, without scheme.
-// If your frontend runs at https://demowebserver.ngbandi.online, rpID should be "demowebserver.ngbandi.online".
 const rpName = 'Example WebAuthn App';
-const rpID = 'demowebserver.ngbandi.online';
+const rpID = 'https://webauthn.ngbandi.online';
 const origin = 'https://demowebserver.ngbandi.online';
 
 // POST /register/options
@@ -40,12 +46,11 @@ app.post('/register/options', (req, res) => {
 
   const options = generateRegistrationOptions({
     rpName,
-    rpID, // use rpID, not origin
+    origin,
     userID: user.id,
     userName: user.username,
     timeout: 60000,
-    // Attestation types: 'none' | 'indirect' | 'direct' | 'enterprise'
-    attestationType: 'none',
+    attestationType: 'public-key',
     authenticatorSelection: {
       userVerification: 'preferred',
     },
@@ -54,7 +59,7 @@ app.post('/register/options', (req, res) => {
       type: 'public-key',
       transports: cred.transports || undefined,
     })),
-    supportedAlgorithmIDs: [-7, -257], // ES256, RS256
+    supportedAlgorithmIDs: [-7, -257],
   });
 
   // Save the challenge on the user for verification later
@@ -66,47 +71,43 @@ app.post('/register/options', (req, res) => {
 // POST /register/verify
 // body: { username, attestation }
 app.post('/register/verify', async (req, res) => {
+  
   const { username, attestation } = req.body || {};
   if (!username || !attestation) return res.status(400).json({ error: 'Missing parameters' });
 
   const user = getUser(username);
   if (!user) return res.status(404).json({ error: 'User not found' });
-
+  console.log('Received /register/verify request with body:', req);
   try {
     const verification = await verifyRegistrationResponse({
-      response: attestation, // client response object from navigator.credentials.create
-      expectedChallenge: user.currentChallenge,
-      expectedOrigin: origin, // full origin (scheme + host + optional port)
-      expectedRPID: rpID, // domain only
-      requireUserVerification: false, // set true if you want to enforce UV
+       credential: attestation,
+       response:  attestation ,
+       expectedChallenge: user.currentChallenge,
+       expectedOrigin: req.headers.host || origin,
+       expectedRPID: origin,
     });
 
-    const { verified, registrationInfo } = verification;
+    
 
+    const {verified, registrationInfo } = verification;
     if (verified && registrationInfo) {
-      const {
-        credentialPublicKey,
-        credentialID,
-        counter,
-        // transports may be present depending on client/platform
-        transports,
-      } = registrationInfo;
+    
+      const { credentialPublicKey, credentialID, counter } = attestation;
 
       addCredentialToUser(username, {
         credentialID: base64url.encode(credentialID),
         credentialPublicKey: base64url.encode(credentialPublicKey),
         counter,
-        transports,
       });
     }
 
-    // Clear challenge after verification attempt (whether verified or not)
-    user.currentChallenge = undefined;
+    // Clear challenge
+   // user.currentChallenge = undefined;
 
     return res.json({ verified });
   } catch (err) {
     console.error('Registration verification error', err);
-    return res.status(400).json({ error: err.message || String(err) });
+    return res.status(400).json({ error: err.message || err.toString() });
   }
 });
 
@@ -144,25 +145,19 @@ app.post('/auth/verify', async (req, res) => {
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   // Find matching stored credential
-  const assertionIDB64 = base64url.encode(base64url.toBuffer(assertion.id));
-  const credential =
-    user.credentials.find((c) => c.credentialID === assertion.id) ||
-    user.credentials.find((c) => c.credentialID === assertionIDB64);
-
+  const credential = user.credentials.find((c) => c.credentialID === assertion.id || c.credentialID === base64url.encode(base64url.toBuffer(assertion.id)));
   if (!credential) return res.status(400).json({ error: 'Unknown credential ID' });
 
   try {
     const verification = await verifyAuthenticationResponse({
-      response: assertion, // client response object from navigator.credentials.get
+      response: assertion,
       expectedChallenge: user.currentChallenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
-      requireUserVerification: false, // set true if you want to enforce UV
       authenticator: {
         credentialPublicKey: base64url.toBuffer(credential.credentialPublicKey),
         credentialID: base64url.toBuffer(credential.credentialID),
         counter: credential.counter || 0,
-        transports: credential.transports || undefined,
       },
     });
 
@@ -171,13 +166,11 @@ app.post('/auth/verify', async (req, res) => {
       credential.counter = authenticationInfo.newCounter;
     }
 
-    // Clear challenge after verification attempt
-    user.currentChallenge = undefined;
-
+   // user.currentChallenge = undefined;
     return res.json({ verified });
   } catch (err) {
     console.error('Authentication verification error', err);
-    return res.status(400).json({ error: err.message || String(err) });
+    return res.status(400).json({ error: err.message || err.toString() });
   }
 });
 
@@ -190,11 +183,35 @@ app.get('/', (req, res) => {
       </head>
       <body>
         <h1>Welcome to the WebAuthn Backend</h1>
-        <p>The server rpID: ${rpID} and origin ${origin} is running and ready to accept requests.</p>
+        <p>The server rpID : ${rpID} and origin ${origin} is running and ready to accept requests. </p>
       </body>
     </html>
   `);
 });
 
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`WebAuthn backend listening on http://dev.ngb.com:${PORT}`));
+
+
+
+// const certPath = process.env.SSL_CERT_PATH || '../certs/opensearch.crt';
+// const keyPath = process.env.SSL_KEY_PATH || '../certs/opensearch.key';
+
+// let server: http.Server | https.Server;
+
+// if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+//   const options = {
+//     key: fs.readFileSync(keyPath),
+//     cert: fs.readFileSync(certPath),
+//   };
+//   server = https.createServer(options, app);
+//   server.listen(process.env.PORT || 443, () => {
+//     console.log('HTTPS server listening on port', process.env.PORT || 443);
+//   });
+// } else {
+//   server = http.createServer(app);
+//   server.listen(process.env.PORT || 3000, () => {
+//     console.log('HTTP server listening on port', process.env.PORT || 3000);
+//   });
+// }
