@@ -83,7 +83,7 @@ app.post('/register/verify', async (req, res) => {
        credential: attestation,
        response:  attestation ,
        expectedChallenge: user.currentChallenge,
-       expectedOrigin: request.headers.origin || origin,
+       expectedOrigin: request.headers.host || origin,
        expectedRPID: origin,
     });
 
