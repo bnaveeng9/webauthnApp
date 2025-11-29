@@ -32,8 +32,8 @@ app.use(bodyParser.json());
 
 // Configuration - adapt these for your environment
 const rpName = 'Example WebAuthn App';
-const rpID = 'https://dzpfvqftdn66z.cloudfront.net';
-const origin = 'http://localhost:4000';
+const rpID = 'https://webauthn.ngbandi.online';
+const origin = 'https://demowebserver.ngbandi.online';
 
 // POST /register/options
 // body: { username }
