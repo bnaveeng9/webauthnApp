@@ -27,7 +27,7 @@ app.use(bodyParser.json());
 // If your frontend runs at https://demowebserver.ngbandi.online, rpID should be "demowebserver.ngbandi.online".
 const rpName = 'Example WebAuthn App';
 const rpID = 'demowebserver.ngbandi.online';
-const origin = 'https://webauthn.ngbandi.online';
+const origin = 'https://demowebserver.ngbandi.online';
 
 // POST /register/options
 // body: { username }
@@ -181,7 +181,7 @@ app.post('/auth/verify', async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
+app.get('/ws', (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html>
