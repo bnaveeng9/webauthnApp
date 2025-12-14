@@ -12,7 +12,8 @@ RUN npm ci
 COPY . .
 
 # Build Angular app for production
-RUN npm run build -- --configuration production
+RUN npm run build 
+#-- --configuration production
 
 # Stage 2: Serve with Nginx
 FROM nginx:1.25-alpine
@@ -21,10 +22,10 @@ FROM nginx:1.25-alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy Angular build output to Nginx html directory
-COPY --from=build /app/dist/* /usr/share/nginx/html/angular-app
+COPY --from=build /app/dist/* /usr/share/nginx/html
 
 # Copy custom Nginx config (optional, for SPA routing)
-#COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80
 EXPOSE 80
