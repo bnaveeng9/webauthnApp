@@ -6,5 +6,10 @@ import { Component } from '@angular/core';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent {
+currentComponent: string = ''; // Tracks which component to show
 
+  // Method to toggle components
+  showComponent(component: string) {
+    this.currentComponent = component;
+  }
 }

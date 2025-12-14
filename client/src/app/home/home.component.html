@@ -1,4 +1,18 @@
 <p>home works!</p>
-<a routerLink="/register">Go to Register</a>
+<!-- <a routerLink="/register">Go to Register</a>
 <br>
-<a routerLink="/login">Go to Login</a> 
+<a routerLink="/login">Go to Login</a>  -->
+
+<!-- Buttons to toggle components -->
+<button (click)="showComponent('register')">Show Register</button>
+<button (click)="showComponent('login')">Show Login</button>
+
+<!-- Render RegisterComponent -->
+<div *ngIf="currentComponent === 'register'">
+  <app-register></app-register>
+</div>
+
+<!-- Render LoginComponent -->
+<div *ngIf="currentComponent === 'login'">
+  <app-login></app-login>
+</div>
