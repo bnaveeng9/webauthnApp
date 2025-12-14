@@ -5,7 +5,7 @@
     "ng": "ng",
     "start": "ng serve --host localhost --port 8080",
     "start:ssl": "ng serve --host localhost --port 80 --ssl --ssl-key ./certs/opensearch.key --ssl-cert ./certs/opensearch.crt --disable-host-check",
-    "build": "ng build",
+    "build": "ng build --configuration development",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

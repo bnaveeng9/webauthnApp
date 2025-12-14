@@ -1,34 +1,38 @@
 # Stage 1: Build Angular app
-FROM node:18-alpine AS build
+FROM node:18-alpine AS client_build
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package*.json ./
+COPY ./client /app/
+
+# Install Angular CLI
 RUN npm ci
 
-# Copy the rest of the source code
-COPY . .
-
 # Build Angular app for production
-RUN npm run build 
-#-- --configuration production
+RUN node_modules/.bin/ng build --configuration production
 
-# Stage 2: Serve with Nginx
-FROM nginx:1.25-alpine
+# Stage 2: Serve with nodejs
+FROM node:18-alpine AS server_build
 
-# Remove default nginx static files
-RUN rm -rf /usr/share/nginx/html/*
+# Set working directory
+WORKDIR /app
 
-# Copy Angular build output to Nginx html directory
-COPY --from=build /app/dist/* /usr/share/nginx/html
+#copy server backend
+COPY ./server /app/
+COPY --from=client_build /app/dist/webauthn-app /app/dist/webauthn-app
 
-# Copy custom Nginx config (optional, for SPA routing)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+RUN npm install --production
 
+# build docker
+FROM node:18-alpine
+
+WORKDIR /app
+RUN apk add --no-cache nodejs
+
+COPY --from=server_build /app ./
 # Expose port 80
-EXPOSE 80
+EXPOSE 3000
 
 # Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server"]
