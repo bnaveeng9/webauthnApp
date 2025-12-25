@@ -1,38 +1,49 @@
-# Stage 1: Build Angular app
-FROM node:18-alpine AS client_build
+# =========================================
+# Stage 1: Build the Angular Application
+# =========================================
+# =========================================
+# Stage 1: Build the Angular Application
+# =========================================
+ARG NODE_VERSION=24.7.0-alpine
+ARG NGINX_VERSION=alpine3.22
 
-# Set working directory
+# Use a lightweight Node.js image for building (customizable via ARG)
+FROM node:${NODE_VERSION} AS builder
+
+# Set the working directory inside the container
 WORKDIR /app
 
-COPY ./client /app/
+# Copy package-related files first to leverage Docker's caching mechanism
+COPY ./client/package.json ./client/package-lock.json /app
 
-# Install Angular CLI
-RUN npm ci
+# Install project dependencies using npm ci (ensures a clean, reproducible install)
+RUN --mount=type=cache,target=/root/.npm npm ci
 
-# Build Angular app for production
-RUN node_modules/.bin/ng build --configuration production
+# Copy the rest of the application source code into the container
+COPY ./client /app
 
-# Stage 2: Serve with nodejs
-FROM node:18-alpine AS server_build
+# Build the Angular application
+RUN npm run build 
 
-# Set working directory
-WORKDIR /app
+# =========================================
+# Stage 2: Prepare Nginx to Serve Static Files
+# =========================================
 
-#copy server backend
-COPY ./server /app/
-COPY --from=client_build /app/dist/webauthn-app /app/dist/webauthn-app
+FROM nginxinc/nginx-unprivileged:${NGINX_VERSION} AS runner
 
-RUN npm install --production
+# Use a built-in non-root user for security best practices
+USER nginx
 
-# build docker
-FROM node:18-alpine
+# Copy custom Nginx config
+COPY ./client/nginx.conf /etc/nginx/nginx.conf
 
-WORKDIR /app
-RUN apk add --no-cache nodejs
+# Copy the static build output from the build stage to Nginx's default HTML serving directory
+COPY --from=builder /app/dist/* /usr/share/nginx/html
 
-COPY --from=server_build /app ./
-# Expose port 80
-EXPOSE 3000
+# Expose port 8080 to allow HTTP traffic
+# Note: The default NGINX container now listens on port 8080 instead of 80 
+EXPOSE 8080
 
-# Start Nginx
-CMD ["node", "server"]
+# Start Nginx directly with custom config
+ENTRYPOINT ["nginx", "-c", "/etc/nginx/nginx.conf"]
+CMD ["-g", "daemon off;"]
